@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nexus Sovereign Dashboard</title>
+    <style>
+        :root { --bg: #0b0f19; --card: #161b27; --accent: #38bdf8; --success: #22c55e; --danger: #ef4444; --warning: #f59e0b; --text: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #2d3343; margin-bottom: 20px; }
+        .flex { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        input { background: #0b0f19; border: 1px solid #2d3343; color: white; padding: 10px; border-radius: 8px; outline: none; }
+        .btn { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card); border-radius: 12px; overflow: hidden; }
+        th, td { padding: 15px; border-bottom: 1px solid #2d3343; text-align: center; }
+        .st-1 { color: var(--success); } .st-2 { color: var(--danger); } .st-0 { color: var(--accent); } .st-3 { color: var(--warning); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card flex">
+        <h1>Nexus <span style="color:var(--accent)">Sovereign</span></h1>
+        <button onclick="runAction('format')" class="btn" style="background:var(--danger)">🧹 FORMAT REQUESTS</button>
+    </div>
+    <div class="card flex">
+        <div class="flex">
+            <input type="text" id="m_key" placeholder="Manual DNA Key">
+            <button onclick="runAction('m_add', document.getElementById('m_key').value)" class="btn" style="background:var(--success)">APPROVE</button>
+        </div>
+        <input type="text" id="s_box" placeholder="Search DNA..." onkeyup="search()">
+    </div>
+    <table>
+        <thead><tr style="background:#2d3343"><th>DNA Key</th><th>Status</th><th>IP Address</th><th>Management</th></tr></thead>
+        <tbody id="list"></tbody>
+    </table>
+</div>
+<script>
+    const ENGINE = "http://kkh-cloud.xo.je/engine.php";
+    const PASS = "Sov_8Xp2_L9kQ_77Nz";
+
+    async function fetchList() {
+        const res = await fetch(`${ENGINE}?pass=${PASS}&action=list`);
+        const data = await res.json();
+        const body = document.getElementById('list');
+        body.innerHTML = "";
+        data.forEach(r => {
+            let stText = r.status == 1 ? "APPROVED" : (r.status == 2 ? "BANNED" : (r.status == 3 ? "TIMED LOCK" : "NEW REQUEST"));
+            body.innerHTML += `<tr>
+                <td><code>${r.device_key}</code></td>
+                <td class="st-${r.status}"><b>${stText}</b></td>
+                <td>${r.ip_address}</td>
+                <td>
+                    <button class="btn" style="background:var(--success)" onclick="runAction('auth','${r.device_key}')">✔</button>
+                    <button class="btn" style="background:var(--warning)" onclick="runAction('lock10','${r.device_key}')">⏳</button>
+                    <button class="btn" style="background:var(--danger)" onclick="runAction('ban','${r.device_key}')">🚫</button>
+                    <button class="btn" style="background:#475569" onclick="runAction('del','${r.device_key}')">🗑</button>
+                </td>
+            </tr>`;
+        });
+    }
+    async function runAction(act, key='') {
+        await fetch(`${ENGINE}?pass=${PASS}&action=${act}&key=${key}`);
+        fetchList();
+    }
+    function search() {
+        let val = document.getElementById('s_box').value.toLowerCase();
+        let rows = document.querySelectorAll('#list tr');
+        rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(val) ? '' : 'none'; });
+    }
+    window.onload = fetchList;
+</script>
+</body>
+</html>
